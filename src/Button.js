@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-export class Button extends Component {
+class Button extends Component {
   render() {
     const { onClick, className = '', children } = this.props;
     return (

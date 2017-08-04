@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
 import './App.css';
+import Search from './Search.js';
+import Table from './Table.js';
+import Button from './Button.js';
 
 const list = [
           {
@@ -19,6 +22,12 @@ const list = [
           objectID: 1,
           },
 ];
+
+function isSearched(searchTerm) {
+  return function(item) {
+    return !searchTerm || item.title.toLowerCase().includes(searchTerm.toLowerCase());
+  }
+}
 
 class App extends Component {
   constructor(props) {
@@ -44,33 +53,24 @@ class App extends Component {
   }
 
   render() {
+    const { searchTerm, list } = this.state;
     return (
       <div className="App">
-        <form action="">
-          <input type="text" onChange={this.onSearchChange}/>
-        </form>
-{/*        { this.state.list.filter().map(item => )}*/}
-        { this.state.list.map(item =>
-          <div key={item.objectID}>
-            <span>
-            <a href={item.url}>{item.title}</a>
-            </span>
-            <span>{item.author}</span>
-            <span>{item.num_comments}</span>
-            <span>{item.points}</span>
-            <span>
-              <button
-              onClick={() => this.onDismiss(item.objectID)}
-              type="button"
-              >
-              Dismiss
-              </button>
-            </span> 
-          </div>
-        )}
+        <Search value={searchTerm} onChange={this.onSearchChange}>This is a child, coming from parent!</Search>
+        <Table list={list} pattern={searchTerm} onDismiss={this.onDismiss}/>
       </div>
     );
   };
 };
 
 export default App;
+
+// function Search(props) {
+//   const { value, onChange, children } = props;
+//   return (
+//     <form>
+//       {children}
+//       <input type="text" onChange={onChange} value={value}/>
+//     </form>
+//   )
+// }

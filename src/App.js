@@ -11,25 +11,6 @@ const PATH_BASE = 'https://hn.algolia.com/api/v1';
 const PATH_SEARCH = '/search';
 const PARAM_SEARCH = 'query=';
 
-// const list = [
-//           {
-//           title: 'React',
-//           url: 'https://facebook.github.io/react/',
-//           author: 'Jordan Walke',
-//           num_comments: 3,
-//           points: 4,
-//           objectID: 0,
-//           },
-//           {
-//           title: 'Redux',
-//           url: 'https://github.com/reactjs/redux',
-//           author: 'Dan Abramov, Andrew Clark',
-//           num_comments: 2,
-//           points: 5,
-//           objectID: 1,
-//           },
-// ];
-
 function isSearched(searchTerm) {
   return function(item) {
     return !searchTerm || item.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -46,11 +27,12 @@ class App extends Component {
       searchTerm: DEFAULT_QUERY
     };
 
-
+    //binds the object 'this' to all functions for use
     this.setSearchTopstories = this.setSearchTopstories.bind(this);
     this.fetchSearchTopstories = this.fetchSearchTopstories.bind(this);
     this.onDismiss = this.onDismiss.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
   };
 
   setSearchTopstories(result) {
@@ -72,22 +54,30 @@ class App extends Component {
 
   onDismiss(id) {
     const isNotId = item => item.objectID !== id;
-    const updatedList = this.state.list.filter(isNotId);
-    this.setState({ list: updatedList });
+    const updatedHits = this.state.result.hits.filter(isNotId);
+    this.setState({ result: {...this.state.result, hits: updatedHits}});
   };
 
   onSearchChange(event) {
     this.setState({ searchTerm: event.target.value })
   };
 
+  onSearchSubmit () {
+    const { searchTerm } = this.state;
+    this.fetchSearchTopstories(searchTerm);
+  };
+
   render() {
-    const { searchTerm, list } = this.state;
+    const { searchTerm, result } = this.state;
+
+    if(!result) { return null; }
+    console.log(this.state);
     return (
       <div className="page">
         <div className="interactions">
-          <Search value={searchTerm} onChange={this.onSearchChange}>This is a child, coming from parent!</Search>
+          <Search value={searchTerm} onChange={this.onSearchChange} onSubmit={this.onSearchSubmit}>This is a child, coming from parent!</Search>
         </div>
-        <Table list={list} pattern={searchTerm} onDismiss={this.onDismiss}/>
+        { result ? <Table list={result.hits} pattern={searchTerm} onDismiss={this.onDismiss}/> : null } {/*conditional rendering*/}
       </div>
     );
   };
@@ -97,11 +87,11 @@ export default App;
 
 
 //stateless functional components
-const Search = ({ value, onChange, children }) => {
+const Search = ({ value, onChange, onSubmit, children }) => {
   return (
-    <form>
-      {children}
+    <form onSubmit={onSubmit}>
       <input type="text" onChange={onChange} value={value}/>
+      <button type="submit">{children}</button>
     </form>
   )
 };

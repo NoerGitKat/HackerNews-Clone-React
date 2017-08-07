@@ -7,11 +7,13 @@ import './App.css';
 //default values
 const DEFAULT_QUERY = 'redux';
 const DEFAULT_PAGE = 0;
+const DEFAULT_HPP = '100';
 
 const PATH_BASE = 'https://hn.algolia.com/api/v1';
 const PATH_SEARCH = '/search';
 const PARAM_SEARCH = 'query=';
 const PARAM_PAGE = 'page=';
+const PARAM_HPP = 'hitsPerPage='
 
 // function isSearched(searchTerm) {
 //   return function(item) {
@@ -25,11 +27,13 @@ class App extends Component {
     super(props);
 
     this.state = {
-      result: null,
+      results: null,
+      searchKey: '',
       searchTerm: DEFAULT_QUERY
     };
 
     //binds the object 'this' to all functions for use
+    this.needsToSearchTopstories = this.needsToSearchTopstories.bind(this);
     this.setSearchTopstories = this.setSearchTopstories.bind(this);
     this.fetchSearchTopstories = this.fetchSearchTopstories.bind(this);
     this.onDismiss = this.onDismiss.bind(this);
@@ -37,27 +41,48 @@ class App extends Component {
     this.onSearchSubmit = this.onSearchSubmit.bind(this);
   };
 
+  needsToSearchTopstories(searchTerm) {
+    return !this.state.results[searchTerm];
+  };
+
   setSearchTopstories(result) {
-    this.setState({ result });
+    const { hits, page } = result;
+    const { searchKey, results } = this.state;
+
+    const oldHits = results && results[searchKey] ? results[searchKey].hits : []; 
+
+    const updatedHits = [
+      ...oldHits, ...hits       // save all pages in one array, which then gets displayed
+    ];
+
+    this.setState({ results: { ...results, [searchKey]: { hits:updatedHits, page} 
+      } 
+    });
   };
 
   fetchSearchTopstories(searchTerm, page) {
     fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}`)
       .then(response => response.json())
-      .then(result => this.setSearchTopstories(result))
+      .then(results => this.setSearchTopstories(results))
       .catch(error => console.log(`Beep boop an error has occurred: ${error}`))
   };
 
   //lifecycle method
   componentDidMount() {
     const { searchTerm } = this.state;
+    this.setState({ searchKey: searchTerm });
     this.fetchSearchTopstories(searchTerm, DEFAULT_PAGE);
   };
 
   onDismiss(id) {
+    const { searchKey, results } = this.state;
+    const { hits, page } = results[searchKey];
+
     const isNotId = item => item.objectID !== id;
-    const updatedHits = this.state.result.hits.filter(isNotId);
-    this.setState({ result: {...this.state.result, hits: updatedHits}});
+    const updatedHits = hits.filter(isNotId);
+    this.setState({ results: { ...results, [searchKey]: { hits: updatedHits, page }
+      }
+    });
   };
 
   onSearchChange(event) {
@@ -66,24 +91,30 @@ class App extends Component {
 
   onSearchSubmit (event) {
     const { searchTerm } = this.state;
-    this.fetchSearchTopstories(searchTerm, DEFAULT_PAGE);
+    this.setState({ searchKey: searchTerm });
+
+    if(this.needsToSearchTopstories(searchTerm)) {
+      this.fetchSearchTopstories(searchTerm, DEFAULT_PAGE);
+    }
+
     event.preventDefault();
   };
 
   render() {
-    const { searchTerm, result } = this.state;
-    const page = (result && result.page) || 0;
+    const { searchTerm, results, searchKey } = this.state;
+    const page = (results && results[searchKey] && results[searchKey].page) || 0;
+    const list = (results && results[searchKey] && results[searchKey].hits) || [];
 
-    if(!result) { return null; }
+    if(!results) { return null; }
     console.log(this.state);
     return (
       <div className="page">
         <div className="interactions">
           <Search value={searchTerm} onChange={this.onSearchChange} onSubmit={this.onSearchSubmit}>This is a child, coming from parent!</Search>
         </div>
-        { result ? <Table list={result.hits} onDismiss={this.onDismiss}/> : null } {/*conditional rendering*/}
+        <Table list={list} onDismiss={this.onDismiss}/>
         <div className="interactions">
-          <Button onClick={() => this.fetchSearchTopstories(searchTerm, page + 1)}>More...</Button>
+          <Button onClick={() => this.fetchSearchTopstories(searchKey, page + 1)}>More...</Button>
         </div>
       </div>
     );

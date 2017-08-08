@@ -3,6 +3,7 @@ import './App.css';
 // import Search from './Search.js';
 // import Table from './Table.js';
 // import Button from './Button.js';
+import PropTypes from 'prop-types';
 
 //default values
 const DEFAULT_QUERY = 'redux';
@@ -138,6 +139,12 @@ const Button = ({ onClick, className = '', children}) => {
   return (
     <button onClick={onClick} className={className} type="button">{children}</button>
   )
+};
+
+Button.propTypes = {      //type checker to prevent bugs, validation
+  onClick: PropTypes.func,
+  className: PropTypes.string,
+  children: PropTypes.node
 };
 
 const Table = ({ list, onDismiss }) => {
